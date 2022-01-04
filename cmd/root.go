@@ -33,6 +33,31 @@ var rootCmd = &cobra.Command{
 			}
 		}
 
+		username, err := cmd.Flags().GetBool("username")
+		if err != nil {
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Error("cannot retrieve username flag")
+		}
+
+		if username {
+			var newAuthors []string
+			for _, author := range authors {
+				atPos := strings.Index(author, "@")
+				if atPos == -1 {
+					log.WithFields(log.Fields{
+						"atPos":  atPos,
+						"author": author,
+					}).Warning("cannot find '@' in author")
+
+					continue
+				}
+				newAuthors = append(newAuthors, author[:atPos])
+			}
+
+			authors = newAuthors
+		}
+
 		fmt.Print(strings.Join(authors, ","))
 	},
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
@@ -54,6 +79,7 @@ func Verbose(cmd *cobra.Command) {
 
 func init() {
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Increase verbosity")
+	rootCmd.PersistentFlags().BoolP("username", "u", false, "Show the username instead of the email.")
 }
 
 // Execute The main function for the root command.

@@ -33,7 +33,7 @@ test:  ## Run go test
 
 bin/glab-reviewers.darwin:  ## Build the application binary for current OS
 
-bin/glab-reviewers.%:  ## Build the application binary for target OS, for example bin/glab-reviewers.linux
+bin/glab-reviewers.%: $(find ./ -name '*.go' -type f) ## Build the application binary for target OS, for example bin/glab-reviewers.linux
 	GOOS=$* go build -o $@ -ldflags "-X $(PACKAGE)/version=$(GIT_TAG)+$(GIT_REF)" main.go
 
 .PHONY: install
