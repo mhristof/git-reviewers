@@ -1,35 +1,41 @@
-#
-# vim:ft=make
-#
-
+language: git
+language: YAML
+language: precommit
+language: GCC Machine Description
+language: Go
+language: AMPL
 MAKEFLAGS += --warn-undefined-variables
-SHELL := bash
+SHELL := /bin/bash
+ifeq ($(word 1,$(subst ., ,$(MAKE_VERSION))),4)
 .SHELLFLAGS := -eu -o pipefail -c
-.DEFAULT_GOAL := all
-.DELETE_ON_ERROR:
+endif
 .ONESHELL:
 
-GIT_REF := $(shell git rev-parse --short HEAD)
+.DEFAULT_GOAL := bin/glab-reviewers.darwin
+GIT_REF := $(shell git describe --match="" --always --dirty=+)
 GIT_TAG := $(shell git name-rev --tags --name-only $(GIT_REF))
-
-.PHONY: all
-all: ./bin/git-reviewers.darwin
-
-./bin/git-reviewers.%: $(shell find ./ -name '*.go')
-	GOOS=$* go build -o $@ -ldflags "-X github.com/mhristof/git-reviewers/cmd.version=$(GIT_TAG)+$(GIT_REF)" main.go
-
-.PHONY: fast-test
-fast-test:  ## Run fast tests
-	go test ./... -tags fast
-
-.PHONY: test
-test:	## Run all tests
-	go test ./...
-
-.PHONY: clean
-clean:
-	rm -rf bin/git-reviewers.*
+PACKAGE := $(shell go list)
 
 .PHONY: help
-help:           ## Show this help.
-	@grep '.*:.*##' Makefile | grep -v grep  | sort | sed 's/:.*## /:/g' | column -t -s:
+help:  ## Show this help
+	@grep '.*:.*##' Makefile | grep -v grep  | sort | sed 's/:.* ##/:/g' | column -t -s:
+
+.git/hooks/pre-commit:  ## Install pre-commit checks
+	pre-commit install
+
+.PHONY: check
+check: .git/hooks/pre-commit ## Run precommit checks
+	pre-commit run --all
+
+.PHONY: test
+test:  ## Run go test
+	go test -v ./...
+
+bin/glab-reviewers.darwin:  ## Build the application binary for current OS
+
+bin/glab-reviewers.%:  ## Build the application binary for target OS, for example bin/glab-reviewers.linux
+	GOOS=$* go build -o $@ -ldflags "-X $(PACKAGE)/version=$(GIT_TAG)+$(GIT_REF)" main.go
+
+.PHONY: install
+install: bin/glab-reviewers.darwin ## Install the binary
+	cp $< ~/bin/glab-reviewers

@@ -10,14 +10,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// CodeOwners Figure out who the code owners are for the given file.
 func CodeOwners(file string) []string {
 	blame := util.Eval(fmt.Sprintf("git blame --line-porcelain %s", file))
 
 	users := map[string]bool{}
+
 	for _, line := range blame {
 		if !strings.HasPrefix(line, "author-mail") {
 			continue
 		}
+
 		fields := strings.Fields(line)
 
 		email := strings.ReplaceAll(fields[1], ">", "")
@@ -41,6 +44,7 @@ func child(commit string) string {
 	return ""
 }
 
+// Main Return the main branch of the current git repositorry.
 func Main() string {
 	ret := "main"
 
@@ -59,15 +63,18 @@ func Main() string {
 	if err != nil {
 		log.Println(err)
 	}
+
 	return ret
 }
 
+// MergeRequests Find out users that have merged changes into this `file`.
 func MergeRequests(file string) []string {
 	commits := util.Eval(fmt.Sprintf(
 		"git --no-pager log --pretty=format:'%%H' %s -- %s", Main(), file,
 	))
 
 	users := map[string]bool{}
+
 	for _, commit := range commits {
 		childCommit := child(commit)
 		childCommitMessage := util.Eval(fmt.Sprintf("git show %s --pretty=format:'%%s'", childCommit))[0]
@@ -77,6 +84,7 @@ func MergeRequests(file string) []string {
 				"childCommit":        childCommit,
 				"childCommitMessage": childCommitMessage,
 			}).Debug("skipping child commit - not a merge")
+
 			continue
 		}
 
@@ -94,6 +102,7 @@ func MergeRequests(file string) []string {
 	return util.Keys(users)
 }
 
+// Email Return the current user git email.
 func Email() string {
 	return util.Eval("git config user.email")[0]
 }
