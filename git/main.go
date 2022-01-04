@@ -10,8 +10,43 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// CodeOwners Figure out who the code owners are for the given file.
-func CodeOwners(file string) []string {
+func RepoReviewers() []string {
+	files := map[string]bool{}
+	// var files []string
+	for _, line := range util.Eval("git log --name-only --pretty=format:'%N'") {
+		if len(line) == 0 {
+			continue
+		}
+		files[line] = true
+	}
+	fileList := util.Keys(files)
+
+	var authors []string
+	for _, file := range fileList {
+		fromFile := util.Eval(fmt.Sprintf("git log --pretty=format:'%%ae' -- '%s' --all", file))
+		authors = append(authors, fromFile...)
+	}
+
+	authors = util.Uniq(authors)
+	fmt.Println(fmt.Sprintf("authors: %+v", authors))
+
+	return authors
+}
+
+// FileReviewer Get at list of suitable reviewers for the given file. This
+// function will check `git blame` and people that have merged changes in the
+// file.
+func FileReviewer(file string) []string {
+	var authors []string
+	authors = append(authors, FileCodeOwners(file)...)
+	authors = append(authors, MergeRequests(file)...)
+	authors = util.Uniq(authors)
+
+	return authors
+}
+
+// FileCodeOwners Figure out who the code owners are for the given file.
+func FileCodeOwners(file string) []string {
 	blame := util.Eval(fmt.Sprintf("git blame --line-porcelain %s", file))
 
 	users := map[string]bool{}

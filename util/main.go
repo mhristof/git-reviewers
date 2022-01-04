@@ -48,3 +48,23 @@ func Uniq(in []string) []string {
 
 	return Keys(m)
 }
+
+func Subtract(haystack []string, remove []string) []string {
+	rem := map[string]bool{}
+
+	for _, k := range remove {
+		rem[k] = true
+	}
+
+	var diff []string
+
+	for _, item := range haystack {
+		if _, ok := rem[item]; ok {
+			continue
+		}
+
+		diff = append(diff, item)
+	}
+
+	return diff
+}
