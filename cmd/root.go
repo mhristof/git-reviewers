@@ -29,6 +29,8 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		var authors []string
 
+		authors = append(authors, git.EligibleApprovers()...)
+
 		branch, err := cmd.Flags().GetBool("branch")
 		if err != nil {
 			log.WithFields(log.Fields{
