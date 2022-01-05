@@ -36,6 +36,12 @@ var rootCmd = &cobra.Command{
 			}).Panic("cannot get 'branch' flag")
 		}
 
+		log.WithFields(log.Fields{
+			"git.Branch()": git.Branch(),
+			"git.Main()":   git.Main(),
+			"branch":       branch,
+		}).Debug("current branch")
+
 		if branch {
 			args = util.Eval(fmt.Sprintf("git diff --name-only %s", git.Main()))
 			// empty line at the end of the array
@@ -120,10 +126,10 @@ func Verbose(cmd *cobra.Command) {
 }
 
 func init() {
-	branch := git.Branch() == git.Main()
+	branch := git.Branch() != git.Main()
 	rootCmd.PersistentFlags().BoolP(
 		"branch", "b", branch,
-		fmt.Sprintf("Detect reviewers for current branch. Enabled when branch name is not 'main' (default %+v)", branch),
+		"Detect reviewers for current branch. Enabled when branch name is not 'main'",
 	)
 	rootCmd.PersistentFlags().StringSliceP(
 		"bots", "",

@@ -123,7 +123,7 @@ func Branch() string {
 		}).Panic("cannot open .git/HEAD")
 	}
 
-	return path.Base(string(data))
+	return strings.TrimSuffix(path.Base(string(data)), "\n")
 }
 
 // MergeRequests Find out users that have merged changes into this `file`.
