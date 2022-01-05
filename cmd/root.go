@@ -17,14 +17,16 @@ var version = "devel"
 var rootCmd = &cobra.Command{
 	Use:   "git-reviewers",
 	Short: "Show potential code ownerse for a repo.",
-	Long: heredoc.Doc(`
+	Long: fmt.Sprintf(heredoc.Doc(`
 		Find out people with code changes for files and repositories.
 
 		If a file is passed, then 'git blame' is used as well as any merges
 		that touch the file provided.
 
 		If no argument is provided, then all files are checked from the repository
-	`),
+
+		Cache file: %s
+	`), git.CacheLocation()),
 	Version: version,
 	Run: func(cmd *cobra.Command, args []string) {
 		var authors []string

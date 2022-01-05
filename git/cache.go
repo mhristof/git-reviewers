@@ -16,7 +16,7 @@ func userCacheDump(cache map[string]string) {
 		panic(err)
 	}
 
-	cachePath := cacheLocation()
+	cachePath := CacheLocation()
 
 	err = os.WriteFile(cachePath, cacheJSON, 0644)
 	if err != nil {
@@ -28,7 +28,7 @@ func userCacheDump(cache map[string]string) {
 }
 
 func userCacheLoad() map[string]string {
-	cachePath := cacheLocation()
+	cachePath := CacheLocation()
 
 	if _, err := os.Stat(cachePath); os.IsNotExist(err) {
 		return map[string]string{}
@@ -49,7 +49,8 @@ func userCacheLoad() map[string]string {
 	return cache
 }
 
-func cacheLocation() string {
+// CacheLocation Provides a cache location for user emails.
+func CacheLocation() string {
 	cachePath, err := xdg.CacheFile("git-reviewers/emails.json")
 	if err != nil {
 		log.WithFields(log.Fields{
