@@ -2,7 +2,9 @@ package git
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -57,10 +59,15 @@ func FileCodeOwners(file string) []string {
 			continue
 		}
 
+		if strings.HasSuffix(line, "<not.committed.yet>") {
+			continue
+		}
+
 		fields := strings.Fields(line)
 
 		email := strings.ReplaceAll(fields[1], ">", "")
 		email = strings.ReplaceAll(email, "<", "")
+
 		users[email] = true
 	}
 
@@ -74,7 +81,13 @@ func child(commit string) string {
 			continue
 		}
 
-		return strings.Split(item, " ")[1]
+		fields := strings.Fields(item)
+
+		if len(fields) < 2 {
+			continue
+		}
+
+		return fields[1]
 	}
 
 	return ""
@@ -101,6 +114,17 @@ func Main() string {
 	}
 
 	return ret
+}
+
+func Branch() string {
+	data, err := ioutil.ReadFile(".git/HEAD")
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Panic("cannot open .git/HEAD")
+	}
+
+	return path.Base(string(data))
 }
 
 // MergeRequests Find out users that have merged changes into this `file`.

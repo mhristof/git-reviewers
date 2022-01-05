@@ -29,6 +29,23 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		var authors []string
 
+		branch, err := cmd.Flags().GetBool("branch")
+		if err != nil {
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Panic("cannot get 'branch' flag")
+		}
+
+		if branch {
+			args = util.Eval(fmt.Sprintf("git diff --name-only %s", git.Main()))
+			// empty line at the end of the array
+			args = args[0 : len(args)-1]
+		}
+
+		log.WithFields(log.Fields{
+			"args": args,
+		}).Debug("checking files")
+
 		if len(args) == 0 {
 			authors = git.RepoReviewers()
 		}
@@ -103,7 +120,16 @@ func Verbose(cmd *cobra.Command) {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringSliceP("bots", "b", []string{"semantic-release-bot@martynus.net"}, "Bot list definition. Used with --human")
+	branch := git.Branch() == git.Main()
+	rootCmd.PersistentFlags().BoolP(
+		"branch", "b", branch,
+		fmt.Sprintf("Detect reviewers for current branch. Enabled when branch name is not 'main' (default %+v)", branch),
+	)
+	rootCmd.PersistentFlags().StringSliceP(
+		"bots", "",
+		[]string{"semantic-release-bot@martynus.net"},
+		"Bot list definition. Used with --human",
+	)
 	rootCmd.PersistentFlags().BoolP("human", "H", true, "Show human reviewers only.")
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Increase verbosity")
 	rootCmd.PersistentFlags().BoolP("username", "u", false, "Show the username instead of the email.")
