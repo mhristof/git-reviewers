@@ -45,6 +45,8 @@ var rootCmd = &cobra.Command{
 			}
 		}
 
+		authors = util.Uniq(authors)
+
 		username, err := cmd.Flags().GetBool("username")
 		if err != nil {
 			log.WithFields(log.Fields{
