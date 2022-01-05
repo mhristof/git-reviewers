@@ -11,7 +11,7 @@ ifeq ($(word 1,$(subst ., ,$(MAKE_VERSION))),4)
 endif
 .ONESHELL:
 
-.DEFAULT_GOAL := bin/glab-reviewers.darwin
+.DEFAULT_GOAL := bin/git-reviewers.darwin
 GIT_REF := $(shell git describe --match="" --always --dirty=+)
 GIT_TAG := $(shell git name-rev --tags --name-only $(GIT_REF))
 PACKAGE := $(shell go list)
@@ -31,11 +31,11 @@ check: .git/hooks/pre-commit ## Run precommit checks
 test:  ## Run go test
 	go test -v ./...
 
-bin/glab-reviewers.darwin:  ## Build the application binary for current OS
+bin/git-reviewers.darwin:  ## Build the application binary for current OS
 
-bin/glab-reviewers.%: $(shell find ./ -name '*.go' -type f) ## Build the application binary for target OS, for example bin/glab-reviewers.linux
+bin/git-reviewers.%: $(shell find ./ -name '*.go' -type f) ## Build the application binary for target OS, for example bin/git-reviewers.linux
 	GOOS=$* go build -o $@ -ldflags "-X $(PACKAGE)/version=$(GIT_TAG)+$(GIT_REF)" main.go
 
 .PHONY: install
-install: bin/glab-reviewers.darwin ## Install the binary
-	cp $< ~/bin/glab-reviewers
+install: bin/git-reviewers.darwin ## Install the binary
+	cp $< ~/bin/git-reviewers

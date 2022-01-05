@@ -80,18 +80,11 @@ var rootCmd = &cobra.Command{
 func convertToUsernames(in []string) []string {
 	var newAuthors []string
 	for _, author := range in {
-		atPos := strings.Index(author, "@")
-		if atPos == -1 {
-			log.WithFields(log.Fields{
-				"atPos":  atPos,
-				"author": author,
-			}).Warning("cannot find '@' in author")
-
-			continue
+		newAuthor := git.User(author)
+		if newAuthor != "" {
+			newAuthors = append(newAuthors, git.User(author))
 		}
-		newAuthors = append(newAuthors, author[:atPos])
 	}
-
 	return newAuthors
 }
 

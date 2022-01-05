@@ -8,6 +8,7 @@ import (
 
 	"github.com/mhristof/git-reviewers/util"
 	log "github.com/sirupsen/logrus"
+	"github.com/xanzy/go-gitlab"
 )
 
 func RepoReviewers() []string {
@@ -140,4 +141,48 @@ func MergeRequests(file string) []string {
 // Email Return the current user git email.
 func Email() string {
 	return util.Eval("git config user.email")[0]
+}
+
+func User(email string) string {
+	cache := userCacheLoad()
+	defer userCacheDump(cache)
+
+	if username, ok := cache[email]; ok {
+		return username
+	}
+
+	git, err := gitlab.NewClient(os.Getenv("GITLAB_TOKEN"))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Error("cannot create gitlab connection")
+
+		return ""
+	}
+
+	users, _, err := git.Users.ListUsers(&gitlab.ListUsersOptions{
+		Search: &email,
+	})
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err":   err,
+			"email": email,
+		}).Error("cannot find user")
+
+		return ""
+	}
+
+	if len(users) != 1 {
+		cache[email] = ""
+		log.WithFields(log.Fields{
+			"len(users)": len(users),
+			"email":      email,
+		}).Error("cannot find user, im confused.")
+
+		return ""
+	}
+
+	cache[email] = users[0].Username
+
+	return users[0].Username
 }
