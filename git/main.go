@@ -31,7 +31,6 @@ func RepoReviewers() []string {
 	}
 
 	authors = util.Uniq(authors)
-	fmt.Println(fmt.Sprintf("authors: %+v", authors))
 
 	return authors
 }
