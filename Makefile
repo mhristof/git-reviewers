@@ -39,3 +39,8 @@ bin/git-reviewers.%: $(shell find ./ -name '*.go' -type f) ## Build the applicat
 .PHONY: install
 install: bin/git-reviewers.darwin ## Install the binary
 	cp $< ~/bin/git-reviewers
+
+release:
+	semver
+	git push --tags
+	go install github.com/mhristof/git-reviewers@$(shell semver current)
