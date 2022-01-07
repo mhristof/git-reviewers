@@ -139,11 +139,6 @@ func MergeRequests(file string) []string {
 		childCommitMessage := util.Eval(fmt.Sprintf("git show %s --pretty=format:'%%s'", childCommit))[0]
 
 		if !strings.HasPrefix(childCommitMessage, "Merge branch") {
-			log.WithFields(log.Fields{
-				"childCommit":        childCommit,
-				"childCommitMessage": childCommitMessage,
-			}).Debug("skipping child commit - not a merge")
-
 			continue
 		}
 

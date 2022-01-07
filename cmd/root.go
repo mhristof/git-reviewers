@@ -33,6 +33,10 @@ var rootCmd = &cobra.Command{
 
 		authors = append(authors, git.EligibleApprovers()...)
 
+		log.WithFields(log.Fields{
+			"authors": authors,
+		}).Debug("from EligibleApprovers")
+
 		branch, err := cmd.Flags().GetBool("branch")
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -57,11 +61,20 @@ var rootCmd = &cobra.Command{
 		}).Debug("checking files")
 
 		if len(args) == 0 {
-			authors = git.RepoReviewers()
+			newAuthors := git.RepoReviewers()
+			log.WithFields(log.Fields{
+				"newAuthors": newAuthors,
+			}).Debug("from git.RepoReviewers()")
+			authors = append(authors, newAuthors...)
 		}
 
 		for _, file := range args {
-			authors = append(authors, git.FileReviewer(file)...)
+			newAuthors := git.FileReviewer(file)
+			log.WithFields(log.Fields{
+				"file":       file,
+				"newAuthors": newAuthors,
+			}).Debug("from git.FileReviewer(file)")
+			authors = append(authors, newAuthors...)
 		}
 
 		for i, author := range authors {
