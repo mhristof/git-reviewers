@@ -29,14 +29,6 @@ var rootCmd = &cobra.Command{
 	`), git.CacheLocation()),
 	Version: version,
 	Run: func(cmd *cobra.Command, args []string) {
-		var authors []string
-
-		authors = append(authors, git.EligibleApprovers()...)
-
-		log.WithFields(log.Fields{
-			"authors": authors,
-		}).Debug("from EligibleApprovers")
-
 		branch, err := cmd.Flags().GetBool("branch")
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -56,78 +48,21 @@ var rootCmd = &cobra.Command{
 			args = args[0 : len(args)-1]
 		}
 
-		log.WithFields(log.Fields{
-			"args": args,
-		}).Debug("checking files")
-
 		if len(args) == 0 {
-			newAuthors := git.RepoReviewers()
-			log.WithFields(log.Fields{
-				"newAuthors": newAuthors,
-			}).Debug("from git.RepoReviewers()")
-			authors = append(authors, newAuthors...)
+			args = git.Files()
 		}
 
-		for _, file := range args {
-			newAuthors := git.FileReviewer(file)
-			log.WithFields(log.Fields{
-				"file":       file,
-				"newAuthors": newAuthors,
-			}).Debug("from git.FileReviewer(file)")
-			authors = append(authors, newAuthors...)
-		}
+		g := git.NewFromFiles(args)
 
-		for i, author := range authors {
-			if author == git.Email() {
-				authors = append(authors[:i], authors[i+1:]...)
+		log.WithFields(log.Fields{
+			"g": fmt.Sprintf("%+v", g),
+		}).Debug("Reviewers")
 
-				break
-			}
-		}
-
-		authors = util.Uniq(authors)
-
-		username, err := cmd.Flags().GetBool("username")
-		if err != nil {
-			log.WithFields(log.Fields{
-				"err": err,
-			}).Error("cannot retrieve username flag")
-		}
-
-		if username {
-			authors = convertToUsernames(authors)
-		}
-
-		human, err := cmd.Flags().GetBool("human")
-		if err != nil {
-			panic(err)
-		}
-
-		bots, err := cmd.Flags().GetStringSlice("bots")
-		if err != nil {
-			panic(err)
-		}
-
-		if human {
-			authors = util.Subtract(authors, bots)
-		}
-
-		fmt.Print(strings.Join(authors, ","))
+		fmt.Println(strings.Join(g.Reviewers(), ","))
 	},
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		Verbose(cmd)
 	},
-}
-
-func convertToUsernames(in []string) []string {
-	var newAuthors []string
-	for _, author := range in {
-		newAuthor := git.User(author)
-		if newAuthor != "" {
-			newAuthors = append(newAuthors, git.User(author))
-		}
-	}
-	return newAuthors
 }
 
 // Verbose Increase verbosity.

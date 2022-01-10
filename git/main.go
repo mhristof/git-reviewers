@@ -13,14 +13,66 @@ import (
 	"github.com/xanzy/go-gitlab"
 )
 
-func RepoReviewers() []string {
-	files := map[string]bool{}
+type Git struct {
+	Blame             map[string]struct{}
+	Merge             map[string]struct{}
+	EligibleApprovers map[string]struct{}
+	RepoContributors  []string
+	ApprovalsRequired int64
+}
+
+func New() Git {
+	approvers, required := EligibleApprovers()
+	return Git{
+		Blame:             map[string]struct{}{},
+		Merge:             map[string]struct{}{},
+		EligibleApprovers: approvers,
+		ApprovalsRequired: required,
+	}
+}
+
+func NewFromFiles(files []string) Git {
+	g := New()
+	for _, file := range files {
+		fromBlame := Blame(file)
+		log.WithFields(log.Fields{
+			"fromBlame": fromBlame,
+		}).Debug("git blame reviewers")
+
+		g.Blame = util.Merge(g.Blame, fromBlame)
+
+		fromMerge := Merge(file)
+		log.WithFields(log.Fields{
+			"fromMerge": fromMerge,
+		}).Debug("git merge reviewers")
+
+		g.Merge = util.Merge(g.Merge, fromMerge)
+	}
+
+	return g
+}
+
+func Files() []string {
+	files := map[string]struct{}{}
 	// var files []string
 	for _, line := range util.Eval("git log --name-only --pretty=format:'%N'") {
 		if len(line) == 0 {
 			continue
 		}
-		files[line] = true
+		files[line] = struct{}{}
+	}
+
+	return util.Keys(files)
+}
+
+func RepoReviewers() []string {
+	files := map[string]struct{}{}
+	// var files []string
+	for _, line := range util.Eval("git log --name-only --pretty=format:'%N'") {
+		if len(line) == 0 {
+			continue
+		}
+		files[line] = struct{}{}
 	}
 	fileList := util.Keys(files)
 
@@ -38,20 +90,20 @@ func RepoReviewers() []string {
 // FileReviewer Get at list of suitable reviewers for the given file. This
 // function will check `git blame` and people that have merged changes in the
 // file.
-func FileReviewer(file string) []string {
-	var authors []string
-	authors = append(authors, FileCodeOwners(file)...)
-	authors = append(authors, MergeRequests(file)...)
-	authors = util.Uniq(authors)
+// func FileReviewer(file string) []string {
+// 	var authors []string
+// 	authors = append(authors, FileCodeOwners(file)...)
+// 	authors = append(authors, MergeRequests(file)...)
+// 	authors = util.Uniq(authors)
 
-	return authors
-}
+// return authors
+// }
 
 // FileCodeOwners Figure out who the code owners are for the given file.
-func FileCodeOwners(file string) []string {
+func Blame(file string) map[string]struct{} {
 	blame := util.Eval(fmt.Sprintf("git blame --line-porcelain %s", file))
 
-	users := map[string]bool{}
+	users := map[string]struct{}{}
 
 	for _, line := range blame {
 		if !strings.HasPrefix(line, "author-mail") {
@@ -67,10 +119,10 @@ func FileCodeOwners(file string) []string {
 		email := strings.ReplaceAll(fields[1], ">", "")
 		email = strings.ReplaceAll(email, "<", "")
 
-		users[email] = true
+		users[User(email)] = struct{}{}
 	}
 
-	return util.Keys(users)
+	return users
 }
 
 func child(commit string) string {
@@ -127,12 +179,12 @@ func Branch() string {
 }
 
 // MergeRequests Find out users that have merged changes into this `file`.
-func MergeRequests(file string) []string {
+func Merge(file string) map[string]struct{} {
 	commits := util.Eval(fmt.Sprintf(
 		"git --no-pager log --pretty=format:'%%H' %s -- %s", Main(), file,
 	))
 
-	users := map[string]bool{}
+	users := map[string]struct{}{}
 
 	for _, commit := range commits {
 		childCommit := child(commit)
@@ -150,10 +202,10 @@ func MergeRequests(file string) []string {
 			"author":        author,
 		}).Debug("found author from child")
 
-		users[author] = true
+		users[User(author)] = struct{}{}
 	}
 
-	return util.Keys(users)
+	return users
 }
 
 // Email Return the current user git email.
@@ -203,4 +255,43 @@ func User(email string) string {
 	cache[email] = users[0].Username
 
 	return users[0].Username
+}
+
+func (g *Git) Reviewers() []string {
+	ret := util.Merge(g.Blame, g.Merge)
+
+	delete(ret, User(Email()))
+	delete(g.EligibleApprovers, User(Email()))
+
+	currentApprovers := 0
+	for k := range ret {
+		if _, ok := g.EligibleApprovers[k]; ok {
+			currentApprovers++
+
+			log.WithFields(log.Fields{
+				"k":                k,
+				"currentApprovers": currentApprovers,
+			}).Debug("found eligible approver")
+		}
+	}
+
+	log.WithFields(log.Fields{
+		"currentApprovers": currentApprovers,
+		"ret":              ret,
+	}).Debug("approvers from Blame and Merge")
+
+	for approver := range g.EligibleApprovers {
+		if currentApprovers >= 2*int(g.ApprovalsRequired) {
+			break
+		}
+
+		ret[approver] = struct{}{}
+		currentApprovers++
+
+		log.WithFields(log.Fields{
+			"currentApprovers": currentApprovers,
+			"approver":         approver,
+		}).Debug("added new approver")
+	}
+	return util.Keys(ret)
 }

@@ -106,7 +106,7 @@ func Project() string {
 	return project
 }
 
-func EligibleApprovers() []string {
+func EligibleApprovers() (map[string]struct{}, int64) {
 	var resp ApprovalRulesResp
 
 	data := curl(fmt.Sprintf(
@@ -121,13 +121,13 @@ func EligibleApprovers() []string {
 		}).Warning("cannot decode gitlab response")
 	}
 
-	var users []string
+	users := map[string]struct{}{}
 
 	for _, item := range resp {
 		for _, user := range item.EligibleApprovers {
-			users = append(users, user.Username)
+			users[user.Username] = struct{}{}
 		}
 	}
 
-	return users
+	return users, resp[0].ApprovalsRequired
 }

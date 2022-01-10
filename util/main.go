@@ -29,7 +29,7 @@ func Eval(command string) []string {
 }
 
 // Keys Returns a list of keys for the given map.
-func Keys(in map[string]bool) []string {
+func Keys(in map[string]struct{}) []string {
 	var ret []string
 	for key := range in {
 		ret = append(ret, key)
@@ -40,10 +40,10 @@ func Keys(in map[string]bool) []string {
 
 // Uniq Return a uniq list of items in the input list.
 func Uniq(in []string) []string {
-	m := map[string]bool{}
+	m := map[string]struct{}{}
 
 	for _, item := range in {
-		m[item] = true
+		m[item] = struct{}{}
 	}
 
 	return Keys(m)
@@ -67,4 +67,12 @@ func Subtract(haystack []string, remove []string) []string {
 	}
 
 	return diff
+}
+
+func Merge(a, b map[string]struct{}) map[string]struct{} {
+	for k, v := range b {
+		a[k] = v
+	}
+
+	return a
 }
