@@ -57,9 +57,6 @@ func CacheLocation() string {
 			"err": err,
 		}).Panic("cannot get a cache path")
 	}
-	log.WithFields(log.Fields{
-		"cachePath": cachePath,
-	}).Debug("emails cache path")
 
 	return cachePath
 }

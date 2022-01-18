@@ -37,6 +37,7 @@ func NewFromFiles(files []string) Git {
 		fromBlame := Blame(file)
 		log.WithFields(log.Fields{
 			"fromBlame": fromBlame,
+			"file":      file,
 		}).Debug("git blame reviewers")
 
 		g.Blame = util.Merge(g.Blame, fromBlame)
@@ -44,6 +45,7 @@ func NewFromFiles(files []string) Git {
 		fromMerge := Merge(file)
 		log.WithFields(log.Fields{
 			"fromMerge": fromMerge,
+			"file":      file,
 		}).Debug("git merge reviewers")
 
 		g.Merge = util.Merge(g.Merge, fromMerge)
@@ -119,7 +121,13 @@ func Blame(file string) map[string]struct{} {
 		email := strings.ReplaceAll(fields[1], ">", "")
 		email = strings.ReplaceAll(email, "<", "")
 
-		users[User(email)] = struct{}{}
+		user := User(email)
+
+		if user == "" {
+			continue
+		}
+
+		users[user] = struct{}{}
 	}
 
 	return users

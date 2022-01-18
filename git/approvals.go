@@ -118,7 +118,9 @@ func EligibleApprovers() (map[string]struct{}, int64) {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err,
-		}).Warning("cannot decode gitlab response")
+		}).Debug("cannot decode gitlab response")
+
+		return map[string]struct{}{}, 0
 	}
 
 	users := map[string]struct{}{}
