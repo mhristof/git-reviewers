@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/adrg/xdg v0.4.0
+	github.com/keybase/go-keychain v0.0.0-20211119201326-e02f34051621
 	github.com/sirupsen/logrus v1.5.0
 	github.com/spf13/cobra v1.0.0
 	github.com/stretchr/testify v1.7.0

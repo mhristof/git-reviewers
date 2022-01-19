@@ -6,16 +6,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 
+	"github.com/mhristof/git-reviewers/keychain"
 	"github.com/mhristof/git-reviewers/util"
 	log "github.com/sirupsen/logrus"
 )
 
 func curl(url string) []byte {
 	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Set("PRIVATE-TOKEN", os.Getenv("GITLAB_TOKEN"))
+	req.Header.Set("PRIVATE-TOKEN", keychain.Item("GITLAB_TOKEN"))
 
 	client := &http.Client{}
 

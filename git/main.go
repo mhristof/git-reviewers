@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/mhristof/git-reviewers/keychain"
 	"github.com/mhristof/git-reviewers/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
@@ -229,7 +230,7 @@ func User(email string) string {
 		return username
 	}
 
-	git, err := gitlab.NewClient(os.Getenv("GITLAB_TOKEN"))
+	git, err := gitlab.NewClient(keychain.Item("GITLAB_TOKEN"))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err,
